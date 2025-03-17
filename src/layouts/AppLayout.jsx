@@ -1,16 +1,16 @@
 import React from "react";
 import { Outlet } from "react-router-dom";
 import Header from "../components/user/Header/Header";
-import Footer from "../components/user/Footer/Footer";
+import Sidebar from "../components/user/Sidebar/Sidebar";
 
 const AppLayout = () => {
   return (
-    <div>
+    <div className="bg-black">
       <Header />
-      <main>
+      <main className="px-2 flex">
+        <Sidebar />
         <Outlet />
       </main>
-      <Footer />
     </div>
   );
 };

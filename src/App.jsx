@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import UserLayout from "./layouts/UserLayout";
 import AppLayout from "./layouts/AppLayout";
+import HomePage from "./pages/App/Homepage"
 
 function App() {
   return (
@@ -9,13 +10,13 @@ function App() {
         <Route path="/" element={<AppLayout />}>
           <Route index element={<HomePage />} />
         </Route>
-        <Route path="user" element={<UserLayout />}>
-          <Route index element={<UserHomePage />} />
-          <Route path="profile" element={<UserProfilePage />} />
-        </Route>
-        <Route path="admin" element={<AdminLayout />}>
+        {/* <Route path="user" element={<UserLayout />}> */}
+          {/* <Route index element={<UserHomePage />} /> */}
+          {/* <Route path="profile" element={<UserProfilePage />} /> */}
+        {/* </Route> */}
+        {/* <Route path="admin" element={<AdminLayout />}>
           <Route index element={<AdminHomePage />} />
-        </Route>
+        </Route> */}
       </Routes>
     </Router>
   );
