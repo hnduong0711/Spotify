@@ -56,14 +56,14 @@ function RegisterPage() {
           </div>
           <button
             type="submit"
-            className="w-full border border-spotify-green text-spotify-green font-semibold py-2 rounded-full hover:bg-spotify-green hover:text-black"
+            className="w-full border border-spotify-base text-spotify-base font-semibold py-2 rounded-full hover:bg-spotify-base hover:text-black cursor-pointer transition duration-300 ease-in-out"
           >
             Sign Up
           </button>
         </form>
         <p className="text-center text-sm mt-4 text-black">
           Đã có tài khoản?{' '}
-          <Link to="/login" className="text-spotify-green hover:underline">
+          <Link to="/login" className="text-spotify-base font-semibold hover:underline">
             Đăng nhập
           </Link>
         </p>

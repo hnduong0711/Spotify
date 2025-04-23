@@ -47,14 +47,14 @@ function LoginPage() {
           </div>
           <button
             type="submit"
-            className="w-full border border-spotify-green text-spotify-green font-semibold py-2 rounded-full hover:bg-spotify-green hover:text-black"
+            className="w-full border border-spotify-base text-spotify-base font-semibold py-2 rounded-full hover:bg-spotify-base hover:text-black cursor-pointer transition duration-300 ease-in-out"
           >
             Log In
           </button>
         </form>
         <p className="text-center text-sm mt-4 text-black">
           Bạn chưa có tài khoản?{' '}
-          <Link to="/register" className="text-spotify-green hover:underline">
+          <Link to="/register" className="text-spotify-base font-semibold hover:underline">
             Đăng ký
           </Link>
         </p>
