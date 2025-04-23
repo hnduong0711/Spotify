@@ -1,1 +1,32 @@
 @import "tailwindcss";
+
+body {
+  margin: 0;
+  background-color: #121212;
+  color: #FFFFFF;
+  font-family: 'Inter', sans-serif;
+  overflow-x: hidden; /* Loại bỏ scroll ngang */
+}
+
+.slick-prev,
+.slick-next {
+  width: 40px !important; /* To hơn */
+  height: 40px !important;
+  background: rgba(0, 0, 0, 0.5) !important;
+  border-radius: 50% !important;
+  z-index: 10 !important;
+}
+
+.slick-prev {
+  left: 10px !important; /* Thụt vào */
+}
+
+.slick-next {
+  right: 10px !important; /* Thụt vào */
+}
+
+.slick-prev:before,
+.slick-next:before {
+  font-size: 24px !important; /* Icon to hơn */
+  color: #FFFFFF !important;
+}
