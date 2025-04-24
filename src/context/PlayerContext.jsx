@@ -16,25 +16,66 @@ export function PlayerProvider({ children }) {
   const videoRef = useRef(null)
 
   const playSong = useCallback((song, songs = [], index = 0) => {
-    if (audioRef.current && audioRef.current.src === (song.audioUrl || 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3') && !audioRef.current.paused) {
+    if (!song) return
+
+    // Kiểm tra nếu bài hát đang phát và không thay đổi
+    const currentSrc = audioRef.current.src || ''
+    const newSrc = song.audioUrl || 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3'
+    if (currentSrc === newSrc && !audioRef.current.paused) {
       return // Không làm gì nếu bài hát đang phát và không thay đổi
     }
 
+    // Reset audio và video trước khi load mới
+    if (audioRef.current) {
+      audioRef.current.pause()
+      audioRef.current.currentTime = 0
+    }
+    if (videoRef.current && typeof videoRef.current.pause === 'function') {
+      videoRef.current.pause()
+      videoRef.current.currentTime = 0
+    }
+
+    // Set state và load mới
     setCurrentSong(song)
     setPlaylist(songs)
     setCurrentIndex(index)
-    audioRef.current.src = song.audioUrl || 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3'
+
+    audioRef.current.src = newSrc
     audioRef.current.volume = volume
-    audioRef.current.play().then(() => {
-      setIsPlaying(true)
-      if (videoRef.current && videoRef.current.play) {
-        videoRef.current.currentTime = 0 // Reset video time
-        videoRef.current.play().catch(err => console.log('Video play error:', err))
-      }
-    }).catch(err => {
-      console.log('Autoplay blocked:', err)
+
+    // Đợi audio load trước khi play
+    audioRef.current.onloadeddata = () => {
+      console.log('Audio data loaded successfully:', newSrc)
+      audioRef.current.play().then(() => {
+        setIsPlaying(true)
+        if (videoRef.current && typeof videoRef.current.play === 'function') {
+          console.log('Attempting to play video... videoRef:', videoRef.current)
+          videoRef.current.currentTime = 0
+          videoRef.current.play().then(() => {
+            console.log('Video play successful')
+          }).catch(err => {
+            console.log('Video play failed:', err.message)
+            // Retry sau 100ms
+            setTimeout(() => {
+              if (videoRef.current && typeof videoRef.current.play === 'function') {
+                console.log('Retrying video play... videoRef:', videoRef.current)
+                videoRef.current.play().catch(e => console.log('Retry video play failed:', e.message))
+              }
+            }, 100)
+          })
+        } else {
+          console.log('Video ref not ready or invalid, videoRef:', videoRef.current)
+        }
+      }).catch(err => {
+        console.log('Autoplay blocked:', err.message)
+        setIsPlaying(false)
+      })
+    }
+
+    audioRef.current.onerror = () => {
+      console.error('Error loading audio:', newSrc)
       setIsPlaying(false)
-    })
+    }
   }, [volume])
 
   const togglePlay = useCallback(() => {
@@ -42,19 +83,34 @@ export function PlayerProvider({ children }) {
 
     if (isPlaying) {
       audioRef.current.pause()
-      if (videoRef.current && videoRef.current.pause) {
+      if (videoRef.current && typeof videoRef.current.pause === 'function') {
         videoRef.current.pause()
+        console.log('Video paused at:', videoRef.current.currentTime)
       }
       setIsPlaying(false)
     } else {
       audioRef.current.play().then(() => {
         setIsPlaying(true)
-        if (videoRef.current && videoRef.current.play) {
+        if (videoRef.current && typeof videoRef.current.play === 'function') {
+          console.log('Attempting to play video... videoRef:', videoRef.current)
           videoRef.current.currentTime = audioRef.current.currentTime // Đồng bộ thời gian
-          videoRef.current.play().catch(err => console.log('Video play error:', err))
+          videoRef.current.play().then(() => {
+            console.log('Video play successful')
+          }).catch(err => {
+            console.log('Video play failed:', err.message)
+            // Retry sau 100ms
+            setTimeout(() => {
+              if (videoRef.current && typeof videoRef.current.play === 'function') {
+                console.log('Retrying video play... videoRef:', videoRef.current)
+                videoRef.current.play().catch(e => console.log('Retry video play failed:', e.message))
+              }
+            }, 100)
+          })
+        } else {
+          console.log('Video ref not ready or invalid, videoRef:', videoRef.current)
         }
       }).catch(err => {
-        console.log('Autoplay blocked:', err)
+        console.log('Autoplay blocked:', err.message)
         setIsPlaying(false)
       })
     }
@@ -99,7 +155,7 @@ export function PlayerProvider({ children }) {
 
   const updateTime = useCallback(() => {
     setCurrentTime(audioRef.current.currentTime)
-    if (videoRef.current && videoRef.current.currentTime !== undefined) {
+    if (videoRef.current && typeof videoRef.current.currentTime !== 'undefined') {
       // Chỉ đồng bộ nếu thời gian chênh lệch quá 0.5 giây
       if (Math.abs(videoRef.current.currentTime - audioRef.current.currentTime) > 0.5) {
         videoRef.current.currentTime = audioRef.current.currentTime
@@ -110,7 +166,7 @@ export function PlayerProvider({ children }) {
   const setTime = useCallback((time) => {
     audioRef.current.currentTime = time
     setCurrentTime(time)
-    if (videoRef.current && videoRef.current.currentTime !== undefined) {
+    if (videoRef.current && typeof videoRef.current.currentTime !== 'undefined') {
       videoRef.current.currentTime = time
     }
   }, [])
@@ -130,7 +186,7 @@ export function PlayerProvider({ children }) {
     if (repeatMode === 'one') {
       audioRef.current.currentTime = 0
       audioRef.current.play().then(() => {
-        if (videoRef.current && videoRef.current.play) {
+        if (videoRef.current && typeof videoRef.current.play === 'function') {
           videoRef.current.currentTime = 0
           videoRef.current.play()
         }

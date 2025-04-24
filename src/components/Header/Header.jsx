@@ -8,11 +8,12 @@ function Header() {
 
   return (
     <header className="bg-spotify-black h-16 flex items-center justify-between px-6">
-      <div className="flex items-center">
+      <div className="flex items-center cursor-pointer">
         <img
           src="https://storage.googleapis.com/pr-newsroom-wp/1/2018/11/Spotify_Logo_CMYK_Green.png"
           alt="Spotify Logo"
           className="h-8"
+          onClick={() => window.location.href = '/'}
         />
       </div>
       <div className="flex-1 mx-6">

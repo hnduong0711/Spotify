@@ -31,3 +31,22 @@ body {
   font-size: 24px !important; /* Icon to hơn */
   color: #FFFFFF !important;
 }
+
+
+/* Tùy chỉnh scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px; /* Chiều rộng của scrollbar */
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #1a1a1a; /* Màu nền của track, tiệp với sidebar */
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #4a4a4a; /* Màu của thumb (phần kéo) */
+  border-radius: 4px; /* Bo góc thumb */
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #6a6a6a; /* Màu thumb khi hover */
+}
