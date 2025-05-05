@@ -95,7 +95,7 @@ Hướng dẫn cài đặt và chạy dự án trên máy cục bộ.
    Mở folder chứa project:
    ```bash
    git clone https://github.com/hnduong0711/Spotify.git
-   cd spotify-clone
+   cd Spotify
    ```
 
 3. **Cài Đặt Các Module đã khai báo**:
