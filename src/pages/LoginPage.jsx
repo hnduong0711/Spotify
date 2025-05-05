@@ -9,12 +9,23 @@ function LoginPage() {
 
   const onSubmit = async (data) => {
     try {
-      // Gọi API giả
-      const response = await axios.post('https://jsonplaceholder.typicode.com/posts', data)
+      // Gọi API login thật
+      const response = await axios.post('http://localhost:8000/api/login', {
+        username: data.username,
+        password: data.password,
+      })
+
+      // Lưu access token và user vào localStorage
+      const { access, user } = response.data
+      localStorage.setItem('accessToken', access)
+      localStorage.setItem('currentUser', JSON.stringify(user))
+
       toast.success('Login successful!')
-      console.log(response.data)
+      console.log('Login response:', response.data)
+      window.location.href = '/'
+      // Có thể thêm redirect sau: window.location.href = '/profile'
     } catch (error) {
-      toast.error('Login failed!')
+      toast.error('Login failed! ' + (error.response?.data?.detail || 'Vui lòng kiểm tra username và mật khẩu!'))
     }
   }
 
@@ -28,13 +39,13 @@ function LoginPage() {
         <h1 className="text-2xl font-bold mb-6 text-center text-black">Log In</h1>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
-            <label className="block text-sm mb-1 text-black">Email</label>
+            <label className="block text-sm mb-1 text-black">Username</label>
             <input
-              type="email"
-              {...register('email', { required: 'Email is required', pattern: { value: /^\S+@\S+$/i, message: 'Invalid email' } })}
+              type="text"
+              {...register('username')}
               className="w-full p-2 bg-gray-100 rounded border border-gray-300 text-black"
             />
-            {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
+            {errors.username && <p className="text-red-500 text-xs mt-1">{errors.username.message}</p>}
           </div>
           <div>
             <label className="block text-sm mb-1 text-black">Password</label>

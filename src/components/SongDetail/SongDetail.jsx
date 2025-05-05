@@ -1,79 +1,34 @@
-import { useState, useRef, useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { usePlayer } from '../../context/PlayerContext'
-import { Play, Plus, MoreHorizontal, Maximize2, Minimize2 } from 'lucide-react'
+import { Play, Pause, Plus, MoreHorizontal, Maximize2, Minimize2 } from 'lucide-react'
 import PlaylistCardList from '../PlaylistCard/PlaylistCardList'
 
 function SongDetail() {
   const { id } = useParams()
-  const { playSong, setVideoRef, isPlaying } = usePlayer()
+  const { currentSong, setVideoRef, isPlaying, togglePlay } = usePlayer()
   const [isFullScreen, setIsFullScreen] = useState(false)
-  const [hasPlayed, setHasPlayed] = useState(false)
   const videoRef = useRef(null)
 
-  // Danh sách bài hát từ playlist (dùng file local)
-  const playlistSongs = [
-    {
-      id: '1',
-      title: 'Ghé Mới',
-      artists: 'B RAY, Young H',
-      image: 'https://via.placeholder.com/300',
-      audioUrl: '/audio/trongbaonoibuon.mp3',
-      videoUrl: '/video/trongbaonoibuon.mp4',
-    },
-    {
-      id: '2',
-      title: 'Lững Lờ',
-      artists: 'Masew, B RAY, REDT, Ý Tiên',
-      image: 'https://via.placeholder.com/300',
-      audioUrl: '/audio/nhannhu.mp3',
-      videoUrl: '/video/nhannhu.mp4',
-    },
-  ]
-
-  // Tìm bài hát hiện tại dựa trên id
-  const song = playlistSongs.find(s => s.id === id) || playlistSongs[0]
-
-  // Đảm bảo videoRef được set đúng trước khi play
   useEffect(() => {
     if (videoRef.current) {
       console.log('Video ref set:', videoRef.current)
       setVideoRef(videoRef.current)
+      if (isPlaying && videoRef.current.paused && currentSong?.videoUrl) {
+        videoRef.current.play().catch(err => console.log('Video play failed:', err.message))
+      } else if (!isPlaying && !videoRef.current.paused) {
+        videoRef.current.pause()
+      }
     } else {
       console.log('Video ref not ready yet')
     }
-  }, [setVideoRef])
+  }, [setVideoRef, isPlaying, currentSong?.videoUrl])
 
-  // Tự động phát để kiểm tra
   useEffect(() => {
-    if (!hasPlayed && videoRef.current) {
-      setVideoRef(videoRef.current)
-      const songIndex = playlistSongs.findIndex(s => s.id === id)
-      playSong(song, playlistSongs, songIndex !== -1 ? songIndex : 0)
-      setHasPlayed(true)
-    } else if (!videoRef.current) {
-      console.log('Video ref not ready for autoplay')
-    }
-  }, [id, playSong, setVideoRef, hasPlayed])
-
-  const handlePlay = () => {
-    if (videoRef.current) {
-      console.log('Handle play - video ref:', videoRef.current)
-      setVideoRef(videoRef.current)
-      const songIndex = playlistSongs.findIndex(s => s.id === id)
-      playSong(song, playlistSongs, songIndex !== -1 ? songIndex : 0)
-      setHasPlayed(true)
-    } else {
-      console.log('Video ref not ready for handlePlay')
-    }
-  }
-
-  // Kiểm tra video URL và trạng thái
-  useEffect(() => {
-    if (song.videoUrl && videoRef.current) {
-      console.log('Video URL:', song.videoUrl)
+    if (currentSong?.videoUrl && videoRef.current) {
+      console.log('Video URL updated:', currentSong.videoUrl)
       videoRef.current.onerror = () => {
-        console.error('Error loading video:', song.videoUrl)
+        console.error('Error loading video:', currentSong.videoUrl)
       }
       videoRef.current.onplay = () => {
         console.log('Video is playing')
@@ -85,7 +40,11 @@ function SongDetail() {
         console.log('Video data loaded successfully')
       }
     }
-  }, [song.videoUrl])
+  }, [currentSong?.videoUrl])
+
+  if (!currentSong) {
+    return <div className="text-white text-center mt-10">Đang tải...</div>
+  }
 
   return (
     <div className={`bg-[#1a1a1a] min-h-screen ${isFullScreen ? 'pb-20' : ''}`}>
@@ -93,19 +52,19 @@ function SongDetail() {
         {/* Bên trái: Thông tin bài hát */}
         <div className="w-1/2 p-6">
           <div className="flex items-end space-x-6 mb-6">
-            <img src={song.image} alt={song.title} className="w-60 h-60 rounded shadow-lg" />
+            <img src={currentSong.image} alt={currentSong.title} className="w-60 h-60 rounded shadow-lg" />
             <div>
               <p className="text-sm text-gray-300">Bài hát</p>
-              <h1 className="text-6xl font-bold text-white mt-2">{song.title}</h1>
-              <p className="text-gray-300 mt-2">{song.artists} • Ghé Mới • 2025 • 3:46 • 2,320,083</p>
+              <h1 className="text-6xl font-bold text-white mt-2">{currentSong.title}</h1>
+              <p className="text-gray-300 mt-2">{currentSong.artists} • {currentSong.duration || '0:00'}</p>
             </div>
           </div>
           <div className="flex items-center space-x-4 mb-6">
             <button
-              onClick={handlePlay}
+              onClick={togglePlay}
               className="bg-spotify-base text-black rounded-full p-4 hover:bg-spotify-highlight"
             >
-              <Play size={24} fill="black" />
+              {isPlaying ? <Pause size={24} fill="black" /> : <Play size={24} fill="black" />}
             </button>
             <button className="text-gray-400 hover:text-white">
               <Plus size={24} />
@@ -115,30 +74,9 @@ function SongDetail() {
             </button>
           </div>
           <div className="mb-6">
-            <h2 className="text-xl font-semibold text-white mb-2">Lời bài hát</h2>
-            <p className="text-gray-400 whitespace-pre-line">
-              Anh muốn có một em ghé mới (mới), một em ghé mới (mới)
-              Một nguồn không theo sau và khi bên anh chỉ để làm phiên (chỉ để làm phiên)
-              Baby, anh muốn em ghé mới (alright), một em ghé mới (new chick)
-              Ngày em bước đi là khi đối anh ngập tràn trong xanh (trong xanh)
-              Dừng đây anh về em ghé mới (ới ời), thích em ghé mới
-              Dừng có để anh bên em ghé mới (mới), ôm em ghé mới (mới đêm)
-              ...Xem thêm
-            </p>
-          </div>
-          <div className="mb-6">
             <h2 className="text-xl font-semibold text-white mb-2">Nghệ sĩ</h2>
-            <div className="text-gray-400 hover:text-white cursor-pointer">B RAY</div>
-            <div className="text-gray-400 hover:text-white cursor-pointer">Young H</div>
+            <div className="text-gray-400 hover:text-white cursor-pointer">{currentSong.artists}</div>
           </div>
-          <PlaylistCardList
-            title="Bài hát của nghệ sĩ"
-            data={[
-              { id: 101, name: 'B RAY Hits', image: 'https://via.placeholder.com/150' },
-              { id: 102, name: 'Young H Vibes', image: 'https://via.placeholder.com/150' },
-              { id: 103, name: 'Rap Viet 2025', image: 'https://via.placeholder.com/150' },
-            ]}
-          />
         </div>
         {/* Bên phải: Video */}
         <div
@@ -148,18 +86,18 @@ function SongDetail() {
               : 'w-1/2 p-6 flex items-center justify-center relative'
           }`}
         >
-          {song.videoUrl ? (
+          {currentSong.videoUrl ? (
             <video
               ref={videoRef}
-              src={song.videoUrl}
+              src={currentSong.videoUrl}
               className={isFullScreen ? 'max-h-full max-w-full' : 'w-full h-auto rounded-lg'}
               muted
               preload="auto"
             />
           ) : (
             <img
-              src={song.image}
-              alt={song.title}
+              src={currentSong.image}
+              alt={currentSong.title}
               className={isFullScreen ? 'max-h-full max-w-full' : 'w-full h-auto rounded-lg'}
             />
           )}

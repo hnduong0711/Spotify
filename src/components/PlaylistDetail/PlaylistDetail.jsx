@@ -1,40 +1,29 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Play, Plus, Clock } from 'lucide-react'
+import axios from 'axios'
+import { usePlayer } from '../../context/PlayerContext'
 
 function PlaylistDetail() {
-  const { id } = useParams()
+  const { id, type } = useParams()
   const navigate = useNavigate()
+  const { playSong } = usePlayer()
   const [showFixedHeader, setShowFixedHeader] = useState(false)
   const headerRef = useRef(null)
-
-  const playlist = {
+  const [playlist, setPlaylist] = useState({
     id: id,
-    name: 'Daily Mix 1',
-    description: 'B RAY, Masew, HIEUTHUHAI và nhiều hơn nữa',
-    image: 'https://via.placeholder.com/300',
-    creator: 'Spotify',
-    songs: 50,
-    duration: 'khoảng 2 giờ 45 phút',
-    tracks: [
-      {
-        id: 1,
-        title: 'Nhắn nhủ',
-        artists: 'Ronboogz',
-        album: 'Bác sĩ tâm hồn Ronboogz',
-        duration: '3:46',
-        image: 'https://via.placeholder.com/40',
-      },
-      {
-        id: 2,
-        title: 'Trong bao nổi buồn',
-        artists: 'Ronboogz',
-        album: 'Bác sĩ tâm hồn Ronboogz',
-        duration: '4:27',
-        image: 'https://via.placeholder.com/40',
-      },
-    ],
-  }
+    name: '',
+    description: '',
+    image: '',
+    creator: '',
+    songs: 0,
+    duration: '',
+    tracks: [],
+  })
+  const [loading, setLoading] = useState(true)
+  const user = JSON.parse(localStorage.getItem('currentUser')) || {}
+  const userId = user.id || 0
+  const accessToken = localStorage.getItem('accessToken')
 
   useEffect(() => {
     const handleScroll = () => {
@@ -47,6 +36,94 @@ function PlaylistDetail() {
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true)
+        let playlistResponse
+        if (type === 'album') {
+          playlistResponse = await axios.get(`http://localhost:8000/api/album/${id}`, {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          })
+        } else if (type === 'playlist') {
+          playlistResponse = await axios.get(`http://localhost:8000/api/playlist/${id}`, {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          })
+        }
+        const playlistName = playlistResponse.data.name
+
+        let songsResponse
+        if (type === 'album') {
+          songsResponse = await axios.get(`http://localhost:8000/api/album-song/album/${id}`, {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          })
+        } else if (type === 'playlist') {
+          songsResponse = await axios.get(`http://localhost:8000/api/playlist-song/playlist/${id}`, {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          })
+        }
+        console.log(`Songs data from API:`, songsResponse.data)
+
+        const songsData = songsResponse.data
+        const totalDuration = songsData.reduce((acc, item) => {
+          const song = item.song
+          return acc + (song.duration || 0)
+        }, 0)
+        const hours = Math.floor(totalDuration / 3600)
+        const minutes = Math.floor((totalDuration % 3600) / 60)
+        const durationStr = hours > 0 ? `khoảng ${hours} giờ ${minutes} phút` : `khoảng ${minutes} phút`
+
+        const tracks = songsData.map((item, index) => ({
+          id: item.song.id,
+          title: item.song.name,
+          artists: item.song.artist.name,
+          album: type === 'album' ? playlistName || 'Không có thông tin album' : 'Playlist tự tạo',
+          duration: new Date((item.song.duration || 0) * 1000).toISOString().substr(14, 5),
+          image: item.song.image_url || 'https://via.placeholder.com/40',
+          audioUrl: item.song.audio_url || '',
+          videoUrl: item.song.video_url || '',
+        }))
+        console.log('Mapped tracks:', tracks)
+
+        setPlaylist({
+          id,
+          name: playlistName || 'Không có tên',
+          description: type === 'album' ? 'Album công khai' : 'Danh sách phát công khai',
+          image: songsData[0]?.song?.image_url || 'https://via.placeholder.com/300',
+          creator: type === 'album' ? 'Admin' : user.username || 'Người dùng',
+          songs: songsData.length,
+          duration: durationStr,
+          tracks,
+        })
+      } catch (error) {
+        console.error(`Error fetching data for ${type}:`, error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchData()
+  }, [id, type, accessToken, user.username])
+
+  const handlePlaySong = (track, index) => {
+    console.log('Playing track:', track.title, 'at index:', index, 'with playlist:', playlist.tracks)
+    playSong(track, playlist.tracks, index)
+    navigate(`/song/${track.id}`)
+  }
+
+  console.log('Playlist state:', playlist)
+
+  if (loading) {
+    return <div className="text-white text-center mt-10">Đang tải...</div>
+  }
 
   return (
     <div className="bg-gradient-to-b from-[#1a6a6a] to-[#1a1a1a] min-h-screen">
@@ -62,7 +139,7 @@ function PlaylistDetail() {
       <div ref={headerRef} className="p-6 flex items-end space-x-6">
         <img src={playlist.image} alt={playlist.name} className="w-60 h-60 rounded shadow-lg" />
         <div>
-          <p className="text-sm text-gray-300">Danh sách phát công khai</p>
+          <p className="text-sm text-gray-300">{type === 'album' ? 'Album công khai' : 'Danh sách phát công khai'}</p>
           <h1 className="text-6xl font-bold text-white mt-2">{playlist.name}</h1>
           <p className="text-gray-300 mt-2">{playlist.description}</p>
           <p className="text-gray-300 mt-2">
@@ -103,7 +180,7 @@ function PlaylistDetail() {
           <div
             key={track.id}
             className="grid grid-cols-12 gap-4 py-2 hover:bg-[#2a2a2a] rounded transition cursor-pointer"
-            onClick={() => navigate(`/song/${track.id}`)}
+            onClick={() => handlePlaySong(track, index)}
           >
             <div className="col-span-1 text-gray-400">{index + 1}</div>
             <div className="col-span-5 flex items-center space-x-4">
