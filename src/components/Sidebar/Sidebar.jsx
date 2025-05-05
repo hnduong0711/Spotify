@@ -1,29 +1,67 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Plus, ChevronLeft, ChevronRight, X } from 'lucide-react'
 import { motion } from 'framer-motion'
+import axios from 'axios'
+import { useNavigate } from 'react-router-dom'
 
 function Sidebar() {
+  const navigate = useNavigate()
   const [isOpen, setIsOpen] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [playlists, setPlaylists] = useState([
-    { id: 1, name: 'RapViet for life', image: 'https://via.placeholder.com/32' },
-    { id: 2, name: 'Pop for life', image: 'https://via.placeholder.com/32' },
-    { id: 3, name: 'RapViet for life', image: 'https://via.placeholder.com/32' },
-    { id: 4, name: 'Pop for life', image: 'https://via.placeholder.com/32' },
-    { id: 5, name: 'RapViet for life', image: 'https://via.placeholder.com/32' },
-    { id: 6, name: 'Pop for life', image: 'https://via.placeholder.com/32' },
-    { id: 7, name: 'RapViet for life', image: 'https://via.placeholder.com/32' },
-    { id: 8, name: 'Pop for life', image: 'https://via.placeholder.com/32' },
-    { id: 9, name: 'RapViet for life', image: 'https://via.placeholder.com/32' },
-    { id: 10, name: 'Pop for life', image: 'https://via.placeholder.com/32' },
-    { id: 11, name: 'RapViet for life', image: 'https://via.placeholder.com/32' },
-    { id: 12, name: 'End', image: 'https://via.placeholder.com/32' },
-  ])
-  const [newPlaylist, setNewPlaylist] = useState({
-    name: '',
-  })
+  const [playlists, setPlaylists] = useState([])
+  const [favourites, setFavourites] = useState([])
+  const [newPlaylist, setNewPlaylist] = useState({ name: '' })
   const [selectedImage, setSelectedImage] = useState(null)
   const [imagePreview, setImagePreview] = useState(null)
+
+  const user = JSON.parse(localStorage.getItem('currentUser')) || {}
+  const userId = user.id || 0
+  const accessToken = localStorage.getItem('accessToken')
+
+  useEffect(() => {
+    const fetchPlaylists = async () => {
+      try {
+        const response = await axios.get(`http://localhost:8000/api/playlist/user/${userId}`, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        })
+        console.log('Playlists response:', response.data)
+        setPlaylists(
+          response.data.map(playlist => ({
+            id: playlist.id,
+            name: playlist.name,
+            image: playlist.image_url || 'https://via.placeholder.com/32',
+          }))
+        )
+      } catch (error) {
+        console.error('Error fetching playlists:', error)
+      }
+    }
+
+    const fetchFavourites = async () => {
+      try {
+        const response = await axios.get(`http://localhost:8000/api/favourite-song/user/4`, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        })
+        console.log('Favourites response:', response.data)
+        setFavourites(
+          response.data.map(item => ({
+            id: item.song.id,
+            name: item.song.name,
+            image: item.song.image_url || 'https://via.placeholder.com/32',
+          }))
+        )
+      } catch (error) {
+        console.error('Error fetching favourites:', error)
+      }
+    }
+
+    fetchPlaylists()
+    fetchFavourites()
+  }, [userId, accessToken])
 
   const handleImageChange = (e) => {
     const file = e.target.files[0]
@@ -50,19 +88,15 @@ function Sidebar() {
     }
 
     try {
-      const response = await fetch('/api/playlists', {
-        method: 'POST',
+      const response = await axios.post(`http://localhost:8000/api/playlist/`, formData, {
         headers: {
-          'Authorization': 'Bearer your-token-here', // Thay bằng token thật sau
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'multipart/form-data',
         },
-        body: formData,
       })
 
-      if (!response.ok) {
-        throw new Error('Failed to create playlist')
-      }
-
-      const createdPlaylist = await response.json()
+      console.log('Created playlist:', response.data)
+      const createdPlaylist = response.data
       setPlaylists([...playlists, {
         id: createdPlaylist.id,
         name: createdPlaylist.name,
@@ -76,6 +110,10 @@ function Sidebar() {
       console.error('Error creating playlist:', error)
       alert('Có lỗi xảy ra khi tạo playlist. Vui lòng thử lại!')
     }
+  }
+
+  const handlePlaylistClick = (type, id) => {
+    navigate(`/${type}/${id}`)
   }
 
   return (
@@ -95,20 +133,35 @@ function Sidebar() {
                 className={`flex items-center space-x-2 text-white hover:bg-spotify-base hover:text-black transition-all duration-300 border-2 border-spotify-green rounded-lg p-2 w-full ${isOpen ? 'justify-start' : 'justify-center'}`}
               >
                 <Plus size={24} />
-                {isOpen && <span className=''>Tạo danh sách phát</span>}
+                {isOpen && <span>Tạo danh sách phát</span>}
               </button>
             </li>
           </ul>
           {isOpen ? (
             <div className="mt-4 pr-2 overflow-y-auto h-[calc(100%-80px)] custom-scrollbar">
-              <h3 className="text-xl text-spotify-base font-semibold">Danh sách phát</h3>
+              <h3 className="text-xl text-spotify-base font-semibold">Favorites</h3>
+              <ul className="mt-2 space-y-4">
+                <li className="hover:bg-white/10 p-4 hover:rounded-lg transition-all duration-300">
+                  <button
+                    onClick={() => handlePlaylistClick('favourites', 'user-favourites')}
+                    className="flex items-center space-x-4 text-white hover:text-spotify-green cursor-pointer w-full text-left"
+                  >
+                    <img src="https://via.placeholder.com/32" alt="Favorites" className="w-8 h-8 rounded" />
+                    <span className="truncate">Favorites</span>
+                  </button>
+                </li>
+              </ul>
+              <h3 className="text-xl text-spotify-base font-semibold mt-6">Danh sách phát</h3>
               <ul className="mt-2 space-y-4">
                 {playlists.map(playlist => (
                   <li key={playlist.id} className="hover:bg-white/10 p-4 hover:rounded-lg transition-all duration-300">
-                    <a href="#" className="flex items-center space-x-4 text-white hover:text-spotify-green cursor-pointer">
+                    <button
+                      onClick={() => handlePlaylistClick('playlist', playlist.id)}
+                      className="flex items-center space-x-4 text-white hover:text-spotify-green cursor-pointer w-full text-left"
+                    >
                       <img src={playlist.image} alt={playlist.name} className="w-8 h-8 rounded" />
                       <span className="truncate">{playlist.name}</span>
-                    </a>
+                    </button>
                   </li>
                 ))}
               </ul>
@@ -116,11 +169,22 @@ function Sidebar() {
           ) : (
             <div className="mt-4 pb-10 overflow-y-auto h-[calc(100%-80px)] custom-scrollbar">
               <ul className="space-y-4">
+                <li className="hover:bg-white/10 p-4 hover:rounded-lg transition-all duration-300">
+                  <button
+                    onClick={() => handlePlaylistClick('favourites', 'user-favourites')}
+                    className="flex items-center justify-center text-white hover:text-spotify-green cursor-pointer"
+                  >
+                    <img src="https://via.placeholder.com/32" alt="Favorites" className="w-8 h-8 rounded" />
+                  </button>
+                </li>
                 {playlists.map(playlist => (
                   <li key={playlist.id} className="hover:bg-white/10 p-4 hover:rounded-lg transition-all duration-300">
-                    <a href="#" className="flex items-center justify-center text-white hover:text-spotify-green cursor-pointer">
+                    <button
+                      onClick={() => handlePlaylistClick('playlist', playlist.id)}
+                      className="flex items-center justify-center text-white hover:text-spotify-green cursor-pointer"
+                    >
                       <img src={playlist.image} alt={playlist.name} className="w-8 h-8 rounded" />
-                    </a>
+                    </button>
                   </li>
                 ))}
               </ul>
@@ -132,14 +196,11 @@ function Sidebar() {
       {/* Modal tạo playlist */}
       {isModalOpen && (
         <div className="fixed inset-0 flex items-center justify-center z-50">
-          {/* Background overlay */}
           <div
             className="absolute inset-0 bg-black"
             style={{ opacity: 0.1 }}
             onClick={() => setIsModalOpen(false)}
           ></div>
-
-          {/* Modal content */}
           <div className="bg-[#2a2a2a] p-6 rounded-lg shadow-lg relative w-full max-w-md">
             <button
               onClick={() => setIsModalOpen(false)}

@@ -9,23 +9,18 @@ export function PlayerProvider({ children }) {
   const [duration, setDuration] = useState(0)
   const [volume, setVolume] = useState(0.5)
   const [repeatMode, setRepeatMode] = useState('none') // none, all, one
-  const [isShuffling, setIsShuffling] = useState(false) // Trạng thái Shuffle
+  const [isShuffling, setIsShuffling] = useState(false)
   const [playlist, setPlaylist] = useState([]) // Danh sách bài hát
-  const [currentIndex, setCurrentIndex] = useState(-1) // Vị trí bài hát hiện tại
+  const [currentIndex, setCurrentIndex] = useState(-1)
   const audioRef = useRef(new Audio())
   const videoRef = useRef(null)
 
   const playSong = useCallback((song, songs = [], index = 0) => {
     if (!song) return
 
-    // Kiểm tra nếu bài hát đang phát và không thay đổi
-    const currentSrc = audioRef.current.src || ''
     const newSrc = song.audioUrl || 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3'
-    if (currentSrc === newSrc && !audioRef.current.paused) {
-      return // Không làm gì nếu bài hát đang phát và không thay đổi
-    }
+    if (audioRef.current.src === newSrc && !audioRef.current.paused) return
 
-    // Reset audio và video trước khi load mới
     if (audioRef.current) {
       audioRef.current.pause()
       audioRef.current.currentTime = 0
@@ -35,36 +30,21 @@ export function PlayerProvider({ children }) {
       videoRef.current.currentTime = 0
     }
 
-    // Set state và load mới
     setCurrentSong(song)
     setPlaylist(songs)
     setCurrentIndex(index)
+    console.log('Playing song:', song.title, 'at index:', index, 'playlist length:', songs.length)
 
     audioRef.current.src = newSrc
     audioRef.current.volume = volume
 
-    // Đợi audio load trước khi play
     audioRef.current.onloadeddata = () => {
-      console.log('Audio data loaded successfully:', newSrc)
+      console.log('Audio data loaded:', newSrc)
       audioRef.current.play().then(() => {
         setIsPlaying(true)
         if (videoRef.current && typeof videoRef.current.play === 'function') {
-          console.log('Attempting to play video... videoRef:', videoRef.current)
           videoRef.current.currentTime = 0
-          videoRef.current.play().then(() => {
-            console.log('Video play successful')
-          }).catch(err => {
-            console.log('Video play failed:', err.message)
-            // Retry sau 100ms
-            setTimeout(() => {
-              if (videoRef.current && typeof videoRef.current.play === 'function') {
-                console.log('Retrying video play... videoRef:', videoRef.current)
-                videoRef.current.play().catch(e => console.log('Retry video play failed:', e.message))
-              }
-            }, 100)
-          })
-        } else {
-          console.log('Video ref not ready or invalid, videoRef:', videoRef.current)
+          videoRef.current.play().catch(err => console.log('Video play failed:', err.message))
         }
       }).catch(err => {
         console.log('Autoplay blocked:', err.message)
@@ -79,35 +59,19 @@ export function PlayerProvider({ children }) {
   }, [volume])
 
   const togglePlay = useCallback(() => {
-    if (!currentSong) return // Không làm gì nếu chưa có bài hát
+    if (!currentSong) return
 
     if (isPlaying) {
       audioRef.current.pause()
       if (videoRef.current && typeof videoRef.current.pause === 'function') {
         videoRef.current.pause()
-        console.log('Video paused at:', videoRef.current.currentTime)
       }
       setIsPlaying(false)
     } else {
       audioRef.current.play().then(() => {
         setIsPlaying(true)
         if (videoRef.current && typeof videoRef.current.play === 'function') {
-          console.log('Attempting to play video... videoRef:', videoRef.current)
-          videoRef.current.currentTime = audioRef.current.currentTime // Đồng bộ thời gian
-          videoRef.current.play().then(() => {
-            console.log('Video play successful')
-          }).catch(err => {
-            console.log('Video play failed:', err.message)
-            // Retry sau 100ms
-            setTimeout(() => {
-              if (videoRef.current && typeof videoRef.current.play === 'function') {
-                console.log('Retrying video play... videoRef:', videoRef.current)
-                videoRef.current.play().catch(e => console.log('Retry video play failed:', e.message))
-              }
-            }, 100)
-          })
-        } else {
-          console.log('Video ref not ready or invalid, videoRef:', videoRef.current)
+          videoRef.current.play().catch(err => console.log('Video play failed:', err.message))
         }
       }).catch(err => {
         console.log('Autoplay blocked:', err.message)
@@ -117,7 +81,10 @@ export function PlayerProvider({ children }) {
   }, [currentSong, isPlaying])
 
   const playPrev = useCallback(() => {
-    if (playlist.length === 0 || currentIndex === -1) return
+    if (playlist.length === 0 || currentIndex === -1) {
+      console.log('No playlist or invalid index for prev:', { playlistLength: playlist.length, currentIndex })
+      return
+    }
     let newIndex = currentIndex - 1
     if (newIndex < 0) {
       newIndex = repeatMode === 'all' ? playlist.length - 1 : 0
@@ -125,11 +92,15 @@ export function PlayerProvider({ children }) {
     if (newIndex !== currentIndex) {
       setCurrentIndex(newIndex)
       playSong(playlist[newIndex], playlist, newIndex)
+      console.log('Playing prev:', playlist[newIndex].title, 'at index:', newIndex)
     }
   }, [currentIndex, playlist, repeatMode, playSong])
 
   const playNext = useCallback(() => {
-    if (playlist.length === 0 || currentIndex === -1) return
+    if (playlist.length === 0 || currentIndex === -1) {
+      console.log('No playlist or invalid index for next:', { playlistLength: playlist.length, currentIndex })
+      return
+    }
     let newIndex = currentIndex + 1
     if (newIndex >= playlist.length) {
       newIndex = repeatMode === 'all' ? 0 : currentIndex
@@ -137,11 +108,15 @@ export function PlayerProvider({ children }) {
     if (newIndex !== currentIndex) {
       setCurrentIndex(newIndex)
       playSong(playlist[newIndex], playlist, newIndex)
+      console.log('Playing next:', playlist[newIndex].title, 'at index:', newIndex)
     }
   }, [currentIndex, playlist, repeatMode, playSong])
 
   const shufflePlay = useCallback(() => {
-    if (playlist.length === 0 || currentIndex === -1) return
+    if (playlist.length <= 1 || currentIndex === -1) {
+      console.log('Not enough songs or invalid index for shuffle:', { playlistLength: playlist.length, currentIndex })
+      return
+    }
     setIsShuffling(!isShuffling)
     if (!isShuffling) {
       const remainingSongs = playlist.filter((_, idx) => idx !== currentIndex)
@@ -150,13 +125,13 @@ export function PlayerProvider({ children }) {
       const newIndex = playlist.findIndex(song => song.id === newSong.id)
       setCurrentIndex(newIndex)
       playSong(newSong, playlist, newIndex)
+      console.log('Shuffling to:', newSong.title, 'at index:', newIndex)
     }
   }, [currentIndex, playlist, isShuffling, playSong])
 
   const updateTime = useCallback(() => {
     setCurrentTime(audioRef.current.currentTime)
     if (videoRef.current && typeof videoRef.current.currentTime !== 'undefined') {
-      // Chỉ đồng bộ nếu thời gian chênh lệch quá 0.5 giây
       if (Math.abs(videoRef.current.currentTime - audioRef.current.currentTime) > 0.5) {
         videoRef.current.currentTime = audioRef.current.currentTime
       }
@@ -185,12 +160,11 @@ export function PlayerProvider({ children }) {
   audioRef.current.onended = () => {
     if (repeatMode === 'one') {
       audioRef.current.currentTime = 0
-      audioRef.current.play().then(() => {
-        if (videoRef.current && typeof videoRef.current.play === 'function') {
-          videoRef.current.currentTime = 0
-          videoRef.current.play()
-        }
-      })
+      audioRef.current.play()
+      if (videoRef.current && typeof videoRef.current.play === 'function') {
+        videoRef.current.currentTime = 0
+        videoRef.current.play()
+      }
     } else if (isShuffling) {
       shufflePlay()
     } else {
