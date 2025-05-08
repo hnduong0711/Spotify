@@ -38,12 +38,8 @@ function ChangePasswordTab() {
   }, [user.id, token]);
 
   const handleUpdateProfile = async () => {
-    const result = window.confirm(
-        "Bạn có chắc chắn muốn thay đổi mật khẩu không?"
-    );
-    if (!result) {
-        return;
-    }
+    if (!confirm("Bạn có chắc chắn muốn thay đổi mật khẩu không?")) return;
+    
     if (newPassword !== confirmPassword) {
       alert("Mật khẩu mới không khớp!");
       return;
