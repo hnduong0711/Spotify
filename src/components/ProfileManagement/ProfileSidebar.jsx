@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
-import { User, BookHeadphones , Music, LogOut, Ellipsis  } from 'lucide-react'
+import { User, BookHeadphones , Music, LogOut, Ellipsis, House  } from 'lucide-react'
 
 function ProfileSidebar() {
   const location = useLocation()
@@ -16,6 +16,15 @@ function ProfileSidebar() {
       <h2 className="text-2xl text-white font-semibold mb-6 text-center">Quản Lý Tài Khoản</h2>
       <nav className="flex-1">
         <ul className="space-y-2">
+        <li>
+            <Link
+              to="/"
+              className={`flex items-center space-x-2 w-full p-2 rounded text-white hover:bg-[#2a2a2a]`}
+            >
+              <House size={24} />
+              <span>Trở về Spotify</span>
+            </Link>
+          </li>
           <li>
             <Link
               to="/profile/info"

@@ -4,7 +4,7 @@ import Sidebar from '../components/Sidebar/Sidebar';
 
 // Layout chính với sidebar và outlet
 const AdminLayout = () => {
-    const isAuthenticated = !!localStorage.getItem('user');
+    const isAuthenticated = !!localStorage.getItem('currentAdmin');
 
     if (!isAuthenticated) {
         return <Navigate to="/admin/login" />;

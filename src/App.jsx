@@ -1,4 +1,6 @@
 import { Routes, Route, Navigate } from "react-router-dom";
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import HomePage from "./pages/Homepage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
@@ -16,9 +18,12 @@ import UserManagement from "./admin/components/UserManagement/UserManagement";
 import Login from "./admin/components/Login/Login";
 import SearchResult from "./components/SearchResult/SearchResult";
 import ChangePasswordTab from "./components/ProfileManagement/ChangePasswordTab";
+import AlbumManagement from "./admin/components/AlbumManagement/AlbumManagement";
+import AlbumDetailManagement from "./admin/components/AlbumDetailManagement/AlbumDetailManagement";
+import Chat from "./admin/components/Chat/Chat";
 
 function App() {
-  const isAuthenticated = !!localStorage.getItem('admin');
+  const isAuthenticated = !!localStorage.getItem('currentAdmin');
   return (
     <UserProvider>
       <Routes>
@@ -42,16 +47,17 @@ function App() {
           path="/admin/login"
           element={isAuthenticated ? <Navigate to="/admin" /> : <Login />}
         />
-        <Route
-          path="/admin"
-          element={isAuthenticated ? <AdminLayout /> : <Navigate to="/admin/login" />}
-        >
+        <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<SongManagement />} />
           <Route path="songs" element={<SongManagement />} />
-          <Route path="users" element={<UserManagement />} />
+          <Route path="artists" element={<UserManagement />} />
+          <Route path="albums" element={<AlbumManagement />} />
+          <Route path="chat" element={<Chat />} />
+          <Route path="albums/:albumId" element={<AlbumDetailManagement />} />
         </Route>
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
+      <ToastContainer />
     </UserProvider>
   );
 }

@@ -3,21 +3,32 @@ import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { usePlayer } from "../../context/PlayerContext";
+import { Plus, Heart } from 'lucide-react';
+import { toast } from 'react-toastify';
 
 function SearchResult() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [songs, setSongs] = useState([]);
   const [filteredSongs, setFilteredSongs] = useState([]);
+  const [playlists, setPlaylists] = useState([]);
+  const [favouriteSongs, setFavouriteSongs] = useState([]);
+  const [showPlaylistDropdown, setShowPlaylistDropdown] = useState(null);
+  const [playlistSongs, setPlaylistSongs] = useState({});
   const query = searchParams.get('q') || '';
   const { playSong } = usePlayer();
 
+  const user = JSON.parse(localStorage.getItem('currentUser')) || {};
+  const userId = user.id || 0;
+  const accessToken = localStorage.getItem('accessToken');
+
+  // Lấy danh sách bài hát
   useEffect(() => {
     const fetchSongs = async () => {
       try {
         const response = await axios.get('http://localhost:8000/api/song', {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+            Authorization: `Bearer ${accessToken}`,
           },
         });
         setSongs(response.data);
@@ -27,8 +38,9 @@ function SearchResult() {
       }
     };
     fetchSongs();
-  }, []);
+  }, [accessToken]);
 
+  // Lọc bài hát theo query
   useEffect(() => {
     const filterResults = () => {
       if (!query) {
@@ -46,11 +58,66 @@ function SearchResult() {
     filterResults();
   }, [query, songs]);
 
+  // Lấy danh sách phát của người dùng
+  useEffect(() => {
+    const fetchPlaylists = async () => {
+      try {
+        const response = await axios.get(`http://localhost:8000/api/playlist/user/${userId}`, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
+        setPlaylists(response.data);
+      } catch (error) {
+        console.error('Error fetching playlists:', error);
+      }
+    };
+    fetchPlaylists();
+  }, [userId, accessToken]);
+
+  // Lấy danh sách bài hát yêu thích
+  useEffect(() => {
+    const fetchFavourites = async () => {
+      try {
+        const response = await axios.get(`http://localhost:8000/api/favourite-song/user/${userId}`, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
+        setFavouriteSongs(response.data.map(item => item.song.id));
+      } catch (error) {
+        console.error('Error fetching favourite songs:', error);
+      }
+    };
+    fetchFavourites();
+  }, [userId, accessToken]);
+
+  // Lấy danh sách bài hát trong mỗi playlist
+  useEffect(() => {
+    const fetchPlaylistSongs = async () => {
+      const songMap = {};
+      for (const playlist of playlists) {
+        try {
+          const response = await axios.get(`http://localhost:8000/api/playlist-song/playlist/${playlist.id}`, {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          });
+          songMap[playlist.id] = response.data.map(item => item.song_id);
+        } catch (error) {
+          console.error(`Error fetching songs for playlist ${playlist.id}:`, error);
+        }
+      }
+      setPlaylistSongs(songMap);
+    };
+    if (playlists.length > 0) fetchPlaylistSongs();
+  }, [playlists, accessToken]);
+
+  // Xử lý click vào bài hát
   const handleSongClick = async (songId) => {
     const selectedSong = filteredSongs.find(song => song.id === songId);
     if (!selectedSong) return;
 
-    // Ánh xạ dữ liệu API sang định dạng mà PlayerContext mong đợi
     const mappedSelectedSong = {
       id: selectedSong.id,
       title: selectedSong.name,
@@ -66,7 +133,7 @@ function SearchResult() {
         const artistId = selectedSong.artist.id;
         const response = await axios.get(`http://localhost:8000/api/song/artist/${artistId}`, {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+            Authorization: `Bearer ${accessToken}`,
           },
         });
         const artistSongs = response.data.map(song => ({
@@ -82,7 +149,7 @@ function SearchResult() {
         playSong(mappedSelectedSong, artistSongs, index);
       } catch (error) {
         console.error('Error fetching artist songs:', error);
-        playSong(mappedSelectedSong, [mappedSelectedSong], 0); // Fallback nếu API lỗi
+        playSong(mappedSelectedSong, [mappedSelectedSong], 0);
       }
     } else {
       const mappedSongs = filteredSongs.map(song => ({
@@ -98,6 +165,72 @@ function SearchResult() {
       playSong(mappedSelectedSong, mappedSongs, index);
     }
     navigate(`/song/${selectedSong.id}`);
+  };
+
+  // Xử lý thêm/xóa bài hát khỏi danh sách phát
+  const handleTogglePlaylistSong = async (playlistId, songId) => {
+    const isInPlaylist = playlistSongs[playlistId]?.includes(songId);
+    try {
+      if (isInPlaylist) {
+        await axios.delete(`http://localhost:8000/api/playlist-song/playlist/${playlistId}/song/${songId}/delete`, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
+        setPlaylistSongs({
+          ...playlistSongs,
+          [playlistId]: playlistSongs[playlistId].filter(id => id !== songId),
+        });
+        toast.success('Đã xóa khỏi danh sách thành công!');
+      } else {
+        await axios.post('http://localhost:8000/api/playlist-song/create', {
+          playlist: playlistId,
+          song_id: songId,
+        }, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+        });
+        setPlaylistSongs({
+          ...playlistSongs,
+          [playlistId]: [...(playlistSongs[playlistId] || []), songId],
+        });
+        toast.success('Thêm vào danh sách thành công!');
+      }
+    } catch (error) {
+      console.error('Error toggling playlist song:', error);
+      toast.error('Có lỗi xảy ra. Vui lòng thử lại!');
+    }
+  };
+
+  // Xử lý thích/xóa khỏi danh sách yêu thích
+  const handleToggleFavourite = async (songId) => {
+    const isFavourited = favouriteSongs.includes(songId);
+    try {
+      if (isFavourited) {
+        await axios.delete(`http://localhost:8000/api/favourite-song/${songId}/delete`, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
+        setFavouriteSongs(favouriteSongs.filter(id => id !== songId));
+      } else {
+        await axios.post('http://localhost:8000/api/favourite-song/create', {
+          user: userId,
+          song_id: songId,
+        }, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+        });
+        setFavouriteSongs([...favouriteSongs, songId]);
+      }
+    } catch (error) {
+      console.error('Error toggling favourite:', error);
+      toast.error('Có lỗi xảy ra khi cập nhật danh sách yêu thích!');
+    }
   };
 
   return (
@@ -118,17 +251,61 @@ function SearchResult() {
           {filteredSongs.map((song) => (
             <li
               key={song.id}
-              className="flex items-center justify-between p-2 hover:bg-white/10 rounded cursor-pointer"
-              onClick={() => handleSongClick(song.id)}
+              className="flex items-center justify-between p-2 hover:bg-white/10 rounded relative"
             >
-              <div className="flex items-center space-x-4">
+              <div
+                className="flex items-center space-x-4 cursor-pointer"
+                onClick={() => handleSongClick(song.id)}
+              >
                 <img src={song.image_url} alt={song.name} className="w-12 h-12 rounded" />
                 <div>
                   <p className="font-medium">{song.name}</p>
                   <p className="text-gray-400 text-sm">{song.artist.name}</p>
                 </div>
               </div>
-              <span className="text-gray-400">{(song.duration / 60).toFixed(2)} phút</span>
+              <div className="flex items-center space-x-2">
+                <span className="text-gray-400">{(song.duration / 60).toFixed(2)} phút</span>
+                <button
+                  onClick={() => setShowPlaylistDropdown(showPlaylistDropdown === song.id ? null : song.id)}
+                  className="text-gray-400 hover:text-white"
+                >
+                  <Plus size={20} />
+                </button>
+                <button
+                  onClick={() => handleToggleFavourite(song.id)}
+                  className="text-gray-400 hover:text-red-500"
+                >
+                  <Heart
+                    size={20}
+                    fill={favouriteSongs.includes(song.id) ? "red" : "none"}
+                    stroke={favouriteSongs.includes(song.id) ? "red" : "currentColor"}
+                  />
+                </button>
+              </div>
+              {showPlaylistDropdown === song.id && (
+                <div className="absolute right-0 top-12 bg-[#2a2a2a] rounded-lg shadow-lg z-10 w-48">
+                  {playlists.length > 0 ? (
+                    playlists.map(playlist => (
+                      <button
+                        key={playlist.id}
+                        onClick={() => handleTogglePlaylistSong(playlist.id, song.id)}
+                        className="flex items-center justify-between w-full text-left px-4 py-2 text-white hover:bg-spotify-base hover:text-black"
+                      >
+                        <span>{playlist.name}</span>
+                        {playlistSongs[playlist.id]?.includes(song.id) && (
+                          <span className="w-4 h-4 flex items-center justify-center">
+                            <svg className="w-3 h-3 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                          </span>
+                        )}
+                      </button>
+                    ))
+                  ) : (
+                    <p className="px-4 py-2 text-gray-400">Không có danh sách phát</p>
+                  )}
+                </div>
+              )}
             </li>
           ))}
         </ul>

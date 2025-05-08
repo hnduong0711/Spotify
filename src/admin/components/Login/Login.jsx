@@ -1,21 +1,47 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import axios from "axios";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 // Component trang đăng nhập admin
 const Login = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
   const handleLogin = (e) => {
-    e.preventDefault();
-    // Giả lập kiểm tra đăng nhập
-    if (email === 'a' && password === 'a') {
-      localStorage.setItem('user', JSON.stringify({ email }));
-      navigate('/admin');
+    const adminLogin = async () => {
+      try {
+        const response = await axios.post(
+          "http://localhost:8000/api/login",
+          {
+            username,
+            password,
+          },
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        const admin = response.data.user;
+        if (admin.role !== "ADMIN") {
+          setError("Bạn không có quyền truy cập vào trang này!");
+          return;
+        }
+        
+        localStorage.setItem("adminToken", response.data.access);
+        localStorage.setItem("currentAdmin", JSON.stringify(admin));
+        navigate("/admin");
+      } catch (error) {
+        setError(error.message);
+      }
+    };
+    if (username && password) {
+      adminLogin();
+      e.preventDefault();
     } else {
-      setError('Email hoặc mật khẩu không đúng!');
+      setError("Vui lòng nhập email và mật khẩu!");
     }
   };
 
@@ -26,17 +52,21 @@ const Login = () => {
         {error && <p className="text-red-500 mb-4">{error}</p>}
         <form onSubmit={handleLogin}>
           <div className="mb-4">
-            <label className="block text-sm font-medium mb-1">Email</label>
+            <label className="block text-sm font-medium mb-1">
+              Tên đăng nhập
+            </label>
             <input
               type="text"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
               className="w-full border rounded px-3 py-2"
               required
             />
           </div>
           <div className="mb-6">
-            <label className="block text-sm font-medium mb-1">Mật Khẩu</label>
+            <label className="block text text-sm font-medium mb-1">
+              Mật Khẩu
+            </label>
             <input
               type="password"
               value={password}
