@@ -7,7 +7,8 @@ const Sidebar = () => {
 
   const handleLogout = () => {
     if (window.confirm('Bạn có chắc muốn đăng xuất?')) {
-      localStorage.removeItem('user');
+      localStorage.removeItem('adminToken');
+      localStorage.removeItem('currentAdmin');
       navigate('/admin/login');
     }
   };
@@ -27,14 +28,34 @@ const Sidebar = () => {
           Quản Lý Bài Hát
         </NavLink>
         <NavLink
-          to="/admin/users"
+          to="/admin/artists"
           className={({ isActive }) =>
             `block py-2 px-4 hover:bg-gray-700 ${
               isActive ? 'bg-blue-500' : ''
             }`
           }
         >
-          Quản Lý Người Dùng
+          Quản Lý Nghệ Sĩ
+        </NavLink>
+        <NavLink
+          to="/admin/albums"
+          className={({ isActive }) =>
+            `block py-2 px-4 hover:bg-gray-700 ${
+              isActive ? 'bg-blue-500' : ''
+            }`
+          }
+        >
+          Quản Lý Album
+        </NavLink>
+        <NavLink
+          to="/admin/chat"
+          className={({ isActive }) =>
+            `block py-2 px-4 hover:bg-gray-700 ${
+              isActive ? 'bg-blue-500' : ''
+            }`
+          }
+        >
+          Chat với AI
         </NavLink>
         <button
           onClick={handleLogout}

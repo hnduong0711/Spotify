@@ -34,9 +34,9 @@ function PlaylistItem({ playlist, type }) {
   }
 
   if(firstSong === null) return (
-    <div className="bg-[#282828] rounded-lg p-4 cursor-pointer hover:bg-[#3E3E3E] transition animate-pulse">
-      <div className="w-full h-40 bg-gray-600 rounded"></div>
-      <p className="mt-2 text-sm font-semibold bg-gray-600 w-1/2 h-4 rounded"></p>
+    <div className="bg-[#282828] rounded-lg p-4 cursor-pointer">
+      <div className="w-full h-40 bg-gray-600 rounded"><img src={playlist.image_url || "https://i.pinimg.com/736x/ec/e4/b5/ece4b597f82c0970b9a92ac5d9207701.jpg"} alt={playlist.name} className="w-full h-40 object-cover rounded" /></div>
+      <p className="mt-2 text-sm font-semibold w-1/2 h-4 rounded">{playlist.name}</p>
     </div>
   )
 

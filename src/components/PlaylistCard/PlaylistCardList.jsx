@@ -21,7 +21,7 @@ function PlaylistCardList({ title, data, type }) {
   return (
     <div className="mb-8">
       <h2 className="text-xl font-semibold mb-4 text-white">{title}</h2>
-      {data.length <= 1 ? (
+      {data.length <= 4 ? (
         <div className="grid grid-cols-4">
           {data.map(playlist => (
             <PlaylistItem key={playlist.id} playlist={playlist} type={type}/>
