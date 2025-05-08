@@ -15,6 +15,7 @@ import SongManagement from "./admin/components/SongManagement/SongManagement";
 import UserManagement from "./admin/components/UserManagement/UserManagement";
 import Login from "./admin/components/Login/Login";
 import SearchResult from "./components/SearchResult/SearchResult";
+import ChangePasswordTab from "./components/ProfileManagement/ChangePasswordTab";
 
 function App() {
   const isAuthenticated = !!localStorage.getItem('admin');
@@ -35,6 +36,7 @@ function App() {
           <Route path="info" element={<ProfileTab />} />
           <Route path="playlist" element={<PlaylistTab />} />
           <Route path="songs" element={<SongsTab />} />
+          <Route path="changepassword" element={<ChangePasswordTab />} />
         </Route>
         <Route
           path="/admin/login"

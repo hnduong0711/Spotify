@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
-import { User, Album, Music, LogOut } from 'lucide-react'
+import { User, BookHeadphones , Music, LogOut, Ellipsis  } from 'lucide-react'
 
 function ProfileSidebar() {
   const location = useLocation()
@@ -13,7 +13,7 @@ function ProfileSidebar() {
 
   return (
     <>
-      <h2 className="text-xl text-white font-semibold mb-6">Quản Lý Tài Khoản</h2>
+      <h2 className="text-2xl text-white font-semibold mb-6 text-center">Quản Lý Tài Khoản</h2>
       <nav className="flex-1">
         <ul className="space-y-2">
           <li>
@@ -23,8 +23,19 @@ function ProfileSidebar() {
                 location.pathname === '/profile/info' ? 'bg-[#2a2a2a]' : ''
               }`}
             >
-              <User size={20} />
+              <User size={24} />
               <span>Thông tin tài khoản</span>
+            </Link>
+          </li>
+          <li>
+            <Link
+              to="/profile/changepassword"
+              className={`flex items-center space-x-2 w-full p-2 rounded text-white hover:bg-[#2a2a2a] ${
+                location.pathname === '/profile/changepassword' ? 'bg-[#2a2a2a]' : ''
+              }`}
+            >
+              <Ellipsis size={24} />
+              <span>Đổi mật khẩu</span>
             </Link>
           </li>
           <li>
@@ -34,7 +45,7 @@ function ProfileSidebar() {
                 location.pathname === '/profile/playlist' ? 'bg-[#2a2a2a]' : ''
               }`}
             >
-              <User size={20} />
+              <BookHeadphones  size={24} />
               <span>Danh sách phát</span>
             </Link>
           </li>
@@ -43,7 +54,7 @@ function ProfileSidebar() {
               onClick={logout}
               className="flex items-center space-x-2 w-full p-2 rounded text-white hover:bg-[#2a2a2a]"
             >
-              <LogOut size={20} />
+              <LogOut size={24} />
               <span>Đăng Xuất</span>
             </button>
           </li>
