@@ -9,9 +9,6 @@ function Homepage() {
   const userId = user.id || 0;
   const accessToken = localStorage.getItem("accessToken");
 
-  console.log("userId:", userId);
-  console.log("accessToken:", accessToken);
-
   // Lấy danh sách album
   useEffect(() => {
     const fetchAlbums = async () => {
@@ -21,7 +18,6 @@ function Homepage() {
             Authorization: `Bearer ${accessToken}`,
           },
         });
-        console.log("Album response:", response.data);
 
         setAlbums(response.data);
       } catch (error) {
@@ -43,7 +39,6 @@ function Homepage() {
             },
           }
         );
-        console.log("Playlist response:", response.data);
         setPlaylists(response.data);
       } catch (error) {
         console.error("Error fetching playlists:", error);

@@ -108,7 +108,7 @@ function PlaylistDetail() {
           duration: new Date((item.song.duration || 0) * 1000)
             .toISOString()
             .substr(14, 5),
-          image: item.song.image_url || "https://via.placeholder.com/40",
+          image: item.song.image_url || "https://www.svgrepo.com/download/2225/music.svg",
           audioUrl: item.song.audio_url || "",
           videoUrl: item.song.video_url || "",
         }));
@@ -120,7 +120,7 @@ function PlaylistDetail() {
           description:
             type === "album" ? "Album công khai" : "Danh sách phát công khai",
           image:
-            songsData[0]?.song?.image_url || "https://via.placeholder.com/300",
+            songsData[0]?.song?.image_url || "https://www.svgrepo.com/download/2225/music.svg",
           creator: type === "album" ? "Admin" : user.username || "Người dùng",
           songs: songsData.length,
           duration: durationStr,
