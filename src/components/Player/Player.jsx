@@ -46,7 +46,7 @@ function Player() {
     <div className="bg-[#282828] h-20 w-full flex items-center justify-between px-4 fixed bottom-0 left-0 right-0">
       <div className="flex items-center space-x-4">
         <img
-          src={currentSong?.image || 'https://via.placeholder.com/48'}
+          src={currentSong?.image || 'https://www.svgrepo.com/download/2225/music.svg'}
           alt="Song"
           className="w-12 h-12 rounded"
         />

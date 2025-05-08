@@ -29,7 +29,6 @@ function Sidebar() {
             Authorization: `Bearer ${accessToken}`,
           },
         })
-        console.log('Playlists response:', response.data)
         const updatedPlaylists = await Promise.all(
           response.data.map(async (playlist) => {
             const songsResponse = await axios.get(`http://localhost:8000/api/playlist-song/playlist/${playlist.id}`, {
@@ -59,12 +58,11 @@ function Sidebar() {
             Authorization: `Bearer ${accessToken}`,
           },
         })
-        console.log('Favourites response:', response.data)
         setFavourites(
           response.data.map(item => ({
             id: item.song.id,
             name: item.song.name,
-            image: item.song.image_url || 'https://via.placeholder.com/32',
+            image: item.song.image_url || 'https://www.svgrepo.com/download/2225/music.svg',
           }))
         )
       } catch (error) {
@@ -102,7 +100,6 @@ function Sidebar() {
     }
 
     try {
-      console.log('Sending data to create playlist:', payload)
       const response = await axios.post(`http://localhost:8000/api/playlist/create`, payload, {
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -110,7 +107,6 @@ function Sidebar() {
         },
       })
 
-      console.log('Created playlist:', response.data)
       const createdPlaylist = response.data
       const songsResponse = await axios.get(`http://localhost:8000/api/playlist-song/playlist/${createdPlaylist.id}`, {
         headers: {
@@ -156,7 +152,6 @@ function Sidebar() {
     }
 
     try {
-      console.log('Updating playlist:', payload)
       const response = await axios.put(`http://localhost:8000/api/playlist/${editingPlaylist.id}/update`, payload, {
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -164,7 +159,6 @@ function Sidebar() {
         },
       })
 
-      console.log('Updated playlist:', response.data)
       const updatedPlaylist = response.data
       const songsResponse = await axios.get(`http://localhost:8000/api/playlist-song/playlist/${updatedPlaylist.id}`, {
         headers: {
@@ -243,7 +237,7 @@ function Sidebar() {
                     onClick={() => handlePlaylistClick('favourites', 'user-favourites')}
                     className="flex items-center space-x-4 text-white hover:text-spotify-green cursor-pointer w-full text-left"
                   >
-                    <img src="https://via.placeholder.com/32" alt="Favorites" className="w-8 h-8 rounded" />
+                    <img src="https://www.svgrepo.com/download/2225/music.svg" alt="Favorites" className="w-8 h-8 rounded" />
                     <span className="truncate">Favorites</span>
                   </button>
                 </li>
@@ -301,7 +295,7 @@ function Sidebar() {
                     onClick={() => handlePlaylistClick('favourites', 'user-favourites')}
                     className="flex items-center justify-center text-white hover:text-spotify-green cursor-pointer"
                   >
-                    <img src="https://via.placeholder.com/32" alt="Favorites" className="w-8 h-8 rounded" />
+                    <img src="https://www.svgrepo.com/download/2225/music.svg" alt="Favorites" className="w-8 h-8 rounded" />
                   </button>
                 </li>
                 {playlists.map(playlist => (
