@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Play, Plus, Clock } from "lucide-react";
+import { Play, Plus, Clock, Trash2 } from "lucide-react";
 import axios from "axios";
 import { usePlayer } from "../../context/PlayerContext";
+import { toast } from 'react-toastify';
 
 function PlaylistDetail() {
   const { id, type } = useParams();
@@ -148,6 +149,25 @@ function PlaylistDetail() {
     navigate(`/song/${track.id}`);
   };
 
+  const handleDeleteSong = async (playlistId, songId) => {
+    try {
+      await axios.delete(`http://localhost:8000/api/playlist-song/playlist/${playlistId}/song/${songId}/delete`, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+      setPlaylist(prev => ({
+        ...prev,
+        tracks: prev.tracks.filter(track => track.id !== songId),
+        songs: prev.songs - 1,
+      }));
+      toast.success('Đã xóa khỏi danh sách thành công!');
+    } catch (error) {
+      console.error('Error deleting song:', error);
+      toast.error('Có lỗi xảy ra khi xóa bài hát!');
+    }
+  };
+
   console.log("Playlist state:", playlist);
 
   if (loading) {
@@ -212,14 +232,15 @@ function PlaylistDetail() {
           <div className="col-span-1">#</div>
           <div className="col-span-5">Tiêu đề</div>
           <div className="col-span-4">Album</div>
-          <div className="col-span-2 flex justify-end">
+          <div className="col-span-1 flex justify-end">
             <Clock size={16} />
           </div>
+          {type === "playlist" && <div className="col-span-1"></div>}
         </div>
         {playlist.tracks.map((track, index) => (
           <div
             key={track.id}
-            className="grid grid-cols-12 gap-4 py-2 hover:bg-[#2a2a2a] rounded transition cursor-pointer"
+            className="grid grid-cols-13 gap-4 py-2 hover:bg-[#2a2a2a] rounded transition cursor-pointer"
             onClick={() => handlePlaySong(track, index)}
           >
             <div className="col-span-1 text-gray-400">{index + 1}</div>
@@ -229,15 +250,28 @@ function PlaylistDetail() {
                 alt={track.title}
                 className="w-10 h-10 rounded"
               />
-              <div>
+              <div className="">
                 <p className="text-white">{track.title}</p>
                 <p className="text-gray-400 text-sm">{track.artists}</p>
               </div>
             </div>
-            <div className="col-span-4 text-gray-400">{track.album}</div>
-            <div className="col-span-2 text-gray-400 text-right">
+            <div className="col-span-4 text-gray-400 flex items-center">{track.album}</div>
+            <div className="col-span-2 text-gray-400 text-right flex items-center justify-end">
               {track.duration}
             </div>
+            {type === "playlist" && (
+              <div className="flex justify-end">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation(); // Ngăn chặn sự kiện click lan ra row
+                    handleDeleteSong(playlist.id, track.id);
+                  }}
+                  className="text-red-500 hover:text-red-700"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            )}
           </div>
         ))}
       </div>

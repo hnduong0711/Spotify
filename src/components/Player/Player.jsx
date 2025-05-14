@@ -51,8 +51,8 @@ function Player() {
           className="w-12 h-12 rounded"
         />
         <div>
-          <p className="text-sm font-semibold">{currentSong?.title || 'Song Title'}</p>
-          <p className="text-xs text-gray-400">{currentSong?.artists || 'Artist Name'}</p>
+          <p className="text-sm font-semibold">{currentSong?.title || 'Chưa có bài hát'}</p>
+          <p className="text-xs text-gray-400">{currentSong?.artists || ''}</p>
         </div>
       </div>
       <div className="flex flex-col items-center space-y-2">
