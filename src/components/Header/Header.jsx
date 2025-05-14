@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Bell, Search } from 'lucide-react'
+import { BotMessageSquare , MessageCircleMore, Search } from 'lucide-react'
 
 function Header() {
   const navigate = useNavigate()
@@ -50,6 +50,12 @@ function Header() {
         </div>
       </div>
       <div className="flex items-center space-x-4">
+        <Link to="/chat-ai" className='bg-spotify-base p-2 rounded-full flex items-center justify-center'>
+          <BotMessageSquare  className="text-black" size={24} />
+        </Link>
+        <Link to="/chat" className='bg-blue-400 p-2 rounded-full flex items-center justify-center'>
+          <MessageCircleMore  className="text-black" size={24} />
+        </Link>
         {user ? (
           <Link className="flex items-center space-x-4" to="/profile">
             <img

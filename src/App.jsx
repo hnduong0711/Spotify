@@ -1,6 +1,6 @@
-import { Routes, Route, Navigate } from "react-router-dom";
-import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { Routes, Route, Navigate, Outlet } from "react-router-dom";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import HomePage from "./pages/Homepage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
@@ -21,28 +21,42 @@ import ChangePasswordTab from "./components/ProfileManagement/ChangePasswordTab"
 import AlbumManagement from "./admin/components/AlbumManagement/AlbumManagement";
 import AlbumDetailManagement from "./admin/components/AlbumDetailManagement/AlbumDetailManagement";
 import Chat from "./admin/components/Chat/Chat";
+import ChatAI from "./components/ChatAI/ChatAI";
+import ChatConversation from "./components/Chat/ChatConversation/ChatConversation";
+import ChatUser from "./components/Chat/Chat";
 
 function App() {
-  const isAuthenticated = !!localStorage.getItem('currentAdmin');
+  const isAuthenticated = !!localStorage.getItem("currentAdmin");
+  const isUserAuthenticated = !!localStorage.getItem("currentUser");
+
   return (
     <UserProvider>
       <Routes>
-        <Route path="/" element={<Layout />}>
-          <Route index element={<HomePage />} />
-          <Route path=":type/:id" element={<PlaylistDetail />} />
-          <Route path=":type/:id" element={<PlaylistDetail />} />
-          <Route path="song/:id" element={<SongDetail />} />
-          <Route path="search" element={<SearchResult />} />
+        <Route
+          element={<ProtectedRoute isAuthenticated={isUserAuthenticated} />}
+        >
+          <Route path="/" element={<Layout />}>
+            <Route index element={<HomePage />} />
+            <Route path=":type/:id" element={<PlaylistDetail />} />
+            <Route path="song/:id" element={<SongDetail />} />
+            <Route path="search" element={<SearchResult />} />
+            <Route path="chat-ai" element={<ChatAI />} />
+            <Route path="/Chat" element={<ChatUser />} />
+            <Route
+              path="/Chat/ChatConversation/:userId/:username"
+              element={<ChatConversation />}
+            />
+          </Route>
+          <Route path="/profile" element={<ProfileLayout />}>
+            <Route index element={<ProfileTab />} />
+            <Route path="info" element={<ProfileTab />} />
+            <Route path="playlist" element={<PlaylistTab />} />
+            <Route path="songs" element={<SongsTab />} />
+            <Route path="changepassword" element={<ChangePasswordTab />} />
+          </Route>
         </Route>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
-        <Route path="/profile" element={<ProfileLayout />}>
-          <Route index element={<ProfileTab />} />
-          <Route path="info" element={<ProfileTab />} />
-          <Route path="playlist" element={<PlaylistTab />} />
-          <Route path="songs" element={<SongsTab />} />
-          <Route path="changepassword" element={<ChangePasswordTab />} />
-        </Route>
         <Route
           path="/admin/login"
           element={isAuthenticated ? <Navigate to="/admin" /> : <Login />}
@@ -55,11 +69,18 @@ function App() {
           <Route path="chat" element={<Chat />} />
           <Route path="albums/:albumId" element={<AlbumDetailManagement />} />
         </Route>
-        <Route path="*" element={<Navigate to="/" />} />
+        <Route path="*" element={<Navigate to="/login" />} />
       </Routes>
       <ToastContainer />
     </UserProvider>
   );
 }
+
+const ProtectedRoute = ({ isAuthenticated }) => {
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+  return <Outlet />;
+};
 
 export default App;
