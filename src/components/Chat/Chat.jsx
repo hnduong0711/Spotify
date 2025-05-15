@@ -7,6 +7,7 @@ function Chat() {
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
   const accessToken = localStorage.getItem("accessToken");
+  const currentUserId = JSON.parse(localStorage.getItem("currentUser"))?.id || "undefined";
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -16,13 +17,35 @@ function Chat() {
             Authorization: `Bearer ${accessToken}`,
           },
         });
-        setUsers(response.data);
+        const usersData = response.data;
+
+        // Lấy lịch sử chat cho từng user
+        const chatHistoryPromises = usersData.map(async (user) => {
+          if (user.id !== currentUserId) {
+            try {
+              const chatResponse = await axios.get(`http://localhost:8000/api/chat/${currentUserId}/${user.id}`, {
+                headers: { Authorization: `Bearer ${accessToken}` },
+              });
+              const latestMessage = chatResponse.data.length > 0
+                ? chatResponse.data.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))[0]
+                : null;
+              return { ...user, latestMessage };
+            } catch (error) {
+              console.error(`Error fetching chat history for user ${user.id}:`, error);
+              return { ...user, latestMessage: null };
+            }
+          }
+          return null;
+        });
+
+        const usersWithHistory = (await Promise.all(chatHistoryPromises)).filter(user => user);
+        setUsers(usersWithHistory);
       } catch (error) {
         console.error("Error fetching users:", error);
       }
     };
     fetchUsers();
-  }, [accessToken]);
+  }, [accessToken, currentUserId]);
 
   const filteredUsers = users.filter(user =>
     user.username.toLowerCase().includes(searchQuery.toLowerCase())
@@ -56,7 +79,14 @@ function Chat() {
               alt={user.username}
               className="w-10 h-10 rounded-full"
             />
-            <span className="font-medium">{user.username}</span>
+            <div className="flex-1">
+              <span className="font-medium">{user.username}</span>
+              {user.latestMessage && (
+                <p className="text-sm text-gray-400 truncate">
+                  {user.latestMessage.sender === currentUserId ? "You: " : `${user.username}: `}{user.latestMessage.message}
+                </p>
+              )}
+            </div>
           </li>
         ))}
       </ul>
